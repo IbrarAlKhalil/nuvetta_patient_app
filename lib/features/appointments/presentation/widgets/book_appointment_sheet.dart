@@ -1,0 +1,264 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:nuveta_patient_app/features/doctors/models/doctor_model.dart';
+
+class BookAppointmentSheet extends StatefulWidget {
+  final DoctorModel? preSelectedDoctor;
+
+  const BookAppointmentSheet({
+    super.key,
+    this.preSelectedDoctor,
+  });
+
+  @override
+  State<BookAppointmentSheet> createState() =>
+      _BookAppointmentSheetState();
+}
+
+class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
+
+  DoctorModel? _selectedDoctor;
+  DateTime? _selectedDate;
+  String? _selectedTime;
+
+  final List<DoctorModel> _doctors = [
+    DoctorModel(
+      id: "1",
+      name: "Dr. Sarah Johnson",
+      specialization: "Cardiologist",
+      rating: 4.8,
+      experience: 10,
+      online: true,
+      patientsCount: 1200,
+      about: "Heart specialist",
+    ),
+    DoctorModel(
+      id: "2",
+      name: "Dr. Michael Chen",
+      specialization: "Neurologist",
+      rating: 4.6,
+      experience: 8,
+      online: false,
+      patientsCount: 900,
+      about: "Brain specialist",
+    ),
+  ];
+
+  final List<String> _times = [
+    '09:00 AM',
+    '10:00 AM',
+    '11:00 AM',
+    '02:00 PM',
+    '03:00 PM',
+    '04:00 PM',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // ✅ FIX: match by ID (not object reference)
+    if (widget.preSelectedDoctor != null) {
+      _selectedDoctor = _doctors.firstWhere(
+        (d) => d.id == widget.preSelectedDoctor!.id,
+        orElse: () => _doctors.first,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    final isMobile = MediaQuery.of(context).size.width < 768;
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.85,
+      maxChildSize: 0.95,
+      minChildSize: 0.6,
+
+      builder: (context, scrollController) {
+        return Container(
+          padding: EdgeInsets.all(isMobile ? 16 : 24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
+            ),
+          ),
+
+          child: ListView(
+            controller: scrollController,
+            children: [
+
+              const SizedBox(height: 10),
+
+              Text(
+                'Book Appointment',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ================= DOCTOR =================
+              Text(
+                'Select Doctor',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField<DoctorModel>(
+                value: _selectedDoctor,
+
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+
+                hint: const Text('Choose Doctor'),
+
+                items: _doctors.map((doctor) {
+                  return DropdownMenuItem(
+                    value: doctor,
+                    child: Text(doctor.displayName),
+                  );
+                }).toList(),
+
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDoctor = value;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              // ================= DATE =================
+              Text(
+                'Select Date',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 12),
+
+              InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().add(
+                      const Duration(days: 1),
+                    ),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(
+                      const Duration(days: 30),
+                    ),
+                  );
+
+                  if (date != null) {
+                    setState(() => _selectedDate = date);
+                  }
+                },
+
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _selectedDate == null
+                        ? 'Choose Date'
+                        : DateFormat('dd MMM yyyy').format(_selectedDate!),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ================= TIME =================
+              Text(
+                'Available Time Slots',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 12),
+
+              Wrap(
+                spacing: 10,
+                children: _times.map((time) {
+
+                  final selected = _selectedTime == time;
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() => _selectedTime = time);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected ? Theme.of(context).colorScheme.primary : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        time,
+                        style: TextStyle(
+                          color: selected ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+
+              const SizedBox(height: 30),
+
+              // ================= BUTTON =================
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: (_selectedDoctor != null &&
+                          _selectedDate != null &&
+                          _selectedTime != null)
+                      ? () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Appointment Booked Successfully',
+                              ),
+                            ),
+                          );
+
+                          Navigator.pop(context);
+                        }
+                      : null,
+
+                  child: const Text('Confirm Booking'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
