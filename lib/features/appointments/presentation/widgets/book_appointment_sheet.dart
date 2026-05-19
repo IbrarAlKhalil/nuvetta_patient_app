@@ -4,10 +4,12 @@ import 'package:nuveta_patient_app/features/doctors/models/doctor_model.dart';
 
 class BookAppointmentSheet extends StatefulWidget {
   final DoctorModel? preSelectedDoctor;
+  final void Function(Map<String, dynamic> appointment)? onBooked;
 
   const BookAppointmentSheet({
     super.key,
     this.preSelectedDoctor,
+    this.onBooked,
   });
 
   @override
@@ -20,6 +22,13 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
   DoctorModel? _selectedDoctor;
   DateTime? _selectedDate;
   String? _selectedTime;
+  String _selectedServiceType = 'telehealth';
+
+  final List<Map<String, String>> _serviceTypes = [
+    {'id': 'telehealth', 'label': 'Telehealth'},
+    {'id': 'home_visit', 'label': 'Home Visit'},
+    {'id': 'in_clinic', 'label': 'In-Clinic'},
+  ];
 
   final List<DoctorModel> _doctors = [
     DoctorModel(
@@ -141,6 +150,36 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
 
               const SizedBox(height: 24),
 
+              // ================= SERVICE TYPE =================
+              Text(
+                'Appointment Type',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 12),
+
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: _serviceTypes.map((type) {
+                  final selected = _selectedServiceType == type['id'];
+                  return ChoiceChip(
+                    label: Text(type['label']!),
+                    selected: selected,
+                    onSelected: (_) {
+                      setState(() {
+                        _selectedServiceType = type['id']!;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+
+              const SizedBox(height: 24),
+
               // ================= DATE =================
               Text(
                 'Select Date',
@@ -240,6 +279,39 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                           _selectedDate != null &&
                           _selectedTime != null)
                       ? () {
+                          final selectedDate = _selectedDate!;
+                          final selectedTime = DateFormat('hh:mm a')
+                              .parse(_selectedTime!);
+                          final appointmentDateTime = DateTime(
+                            selectedDate.year,
+                            selectedDate.month,
+                            selectedDate.day,
+                            selectedTime.hour,
+                            selectedTime.minute,
+                          );
+
+                          final appointment = {
+                            'id': DateTime.now().millisecondsSinceEpoch
+                                .toString(),
+                            'doctorName': _selectedDoctor!.displayName,
+                            'specialty': _selectedDoctor!.specialization,
+                            'dateTime': appointmentDateTime,
+                            'status': 'scheduled',
+                            'type': _selectedServiceType,
+                            'notes': _selectedServiceType == 'telehealth'
+                                ? 'Telehealth video visit'
+                                : _selectedServiceType == 'home_visit'
+                                    ? 'Home visit requested'
+                                    : 'In-clinic appointment',
+                            'location': _selectedServiceType == 'telehealth'
+                                ? 'Telehealth visit'
+                                : _selectedServiceType == 'home_visit'
+                                    ? 'Home visit'
+                                    : 'Clinic visit',
+                          };
+
+                          widget.onBooked?.call(appointment);
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(

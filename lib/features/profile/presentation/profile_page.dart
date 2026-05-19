@@ -19,12 +19,8 @@ class ProfilePage extends ConsumerWidget {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FB),
-      appBar: AppBar(
-        title: const Text("My Profile"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(title: const Text("My Profile")),
       body: authState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text("Error: $e")),
@@ -40,7 +36,6 @@ class ProfilePage extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-
                 /// HEADER
                 ProfileHeader(data: data),
 
@@ -54,10 +49,26 @@ class ProfilePage extends ConsumerWidget {
                       spacing: 12,
                       runSpacing: 12,
                       children: [
-                        InfoTile(icon: Icons.cake, label: "DOB", value: DateFormat('dd MMM yyyy').format(dob)),
-                        InfoTile(icon: Icons.person, label: "Gender", value: data['gender']),
-                        InfoTile(icon: Icons.bloodtype, label: "Blood", value: data['bloodType']),
-                        InfoTile(icon: Icons.phone, label: "Phone", value: data['phone']),
+                        InfoTile(
+                          icon: Icons.cake,
+                          label: "DOB",
+                          value: DateFormat('dd MMM yyyy').format(dob),
+                        ),
+                        InfoTile(
+                          icon: Icons.person,
+                          label: "Gender",
+                          value: data['gender'],
+                        ),
+                        InfoTile(
+                          icon: Icons.bloodtype,
+                          label: "Blood",
+                          value: data['bloodType'],
+                        ),
+                        InfoTile(
+                          icon: Icons.phone,
+                          label: "Phone",
+                          value: data['phone'],
+                        ),
                       ],
                     ),
                   ],
@@ -71,16 +82,23 @@ class ProfilePage extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        MetricCard(title: "Height", value: "${data['height']} cm"),
+                        MetricCard(
+                          title: "Height",
+                          value: "${data['height']} cm",
+                        ),
                         const SizedBox(width: 10),
-                        MetricCard(title: "Weight", value: "${data['weight']} kg"),
+                        MetricCard(
+                          title: "Weight",
+                          value: "${data['weight']} kg",
+                        ),
                         const SizedBox(width: 10),
                         MetricCard(
                           title: "BMI",
-                          value: ((data['weight'] /
-                                  ((data['height'] / 100) *
-                                      (data['height'] / 100))))
-                              .toStringAsFixed(1),
+                          value:
+                              ((data['weight'] /
+                                      ((data['height'] / 100) *
+                                          (data['height'] / 100))))
+                                  .toStringAsFixed(1),
                         ),
                       ],
                     ),

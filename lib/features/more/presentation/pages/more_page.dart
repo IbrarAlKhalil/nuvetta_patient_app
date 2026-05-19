@@ -7,13 +7,10 @@ class MorePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("More"),
-      ),
+      appBar: AppBar(title: const Text("More")),
 
       body: ListView(
         children: [
-
           const SizedBox(height: 10),
           _buildTile(
             context,
@@ -47,7 +44,7 @@ class MorePage extends StatelessWidget {
             context,
             icon: Icons.local_pharmacy,
             title: "Pharmacy",
-            route: "/pharacy", 
+            route: "/pharmacy",
           ),
 
           _buildTile(
@@ -82,9 +79,9 @@ class MorePage extends StatelessWidget {
         if (route != null) {
           context.push(route);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("$title coming soon")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("$title coming soon")));
         }
       },
     );

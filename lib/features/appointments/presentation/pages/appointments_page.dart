@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:nuveta_patient_app/core/mock/mock_data.dart';
 
+import '../pages/telehealth_session_page.dart';
 import '../widgets/book_appointment_sheet.dart';
 
 class AppointmentsPage extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class _AppointmentsPageState
     with SingleTickerProviderStateMixin {
 
   late TabController _tabController;
+  List<Map<String, dynamic>> _appointments = [];
 
   @override
   void initState() {
@@ -28,6 +30,8 @@ class _AppointmentsPageState
       length: 2,
       vsync: this,
     );
+
+    _appointments = MockDataGenerator.generateAppointments();
   }
 
   @override
@@ -36,11 +40,16 @@ class _AppointmentsPageState
     super.dispose();
   }
 
+  void _addAppointment(Map<String, dynamic> appointment) {
+    setState(() {
+      _appointments.insert(0, appointment);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
 
-    final appointments =
-    MockDataGenerator.generateAppointments();
+    final appointments = _appointments;
 
     final now = DateTime.now();
 
@@ -91,12 +100,12 @@ class _AppointmentsPageState
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            builder: (_) =>
-            const BookAppointmentSheet(),
+            builder: (_) => BookAppointmentSheet(
+              onBooked: _addAppointment,
+            ),
           );
         },
         child: const Icon(Icons.add),
@@ -201,6 +210,25 @@ class _AppointmentsList extends StatelessWidget {
 
                 Row(
                   children: [
+                    const Icon(Icons.room_service),
+                    const SizedBox(width: 8),
+                    Text(
+                      apt['type'] == 'telehealth'
+                          ? 'Telehealth'
+                          : apt['type'] == 'home_visit'
+                              ? 'Home Visit'
+                              : 'In-Clinic',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
 
                     const Icon(Icons.location_on),
 
@@ -218,11 +246,39 @@ class _AppointmentsList extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: isPrevious
+                        ? () {}
+                        : () {
+                            if (apt['type'] == 'telehealth') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => TelehealthSessionPage(
+                                    appointment: apt,
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final message = apt['type'] == 'home_visit'
+                                ? 'Your home visit request is confirmed. The provider will arrive at the scheduled time.'
+                                : 'Please arrive at the clinic on time for your in-clinic appointment.';
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(message),
+                              ),
+                            );
+                          },
                     child: Text(
                       isPrevious
                           ? 'Book Again'
-                          : 'View Details',
+                          : apt['type'] == 'telehealth'
+                              ? 'Join Video Visit'
+                              : apt['type'] == 'home_visit'
+                                  ? 'Home Visit Details'
+                                  : 'View Location',
                     ),
                   ),
                 ),
