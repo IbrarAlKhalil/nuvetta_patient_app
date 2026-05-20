@@ -9,6 +9,7 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/appointments/presentation/pages/appointments_page.dart';
+import '../../features/prescriptions/presentation/pages/prescriptions_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../shared/layouts/app_shell.dart';
 
@@ -52,6 +53,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/appointments',
             builder: (context, state) => const AppointmentsPage(),
+          ),
+          GoRoute(
+            path: '/prescriptions',
+            builder: (context, state) => const PrescriptionsPage(),
           ),
           GoRoute(
             path: '/profile',

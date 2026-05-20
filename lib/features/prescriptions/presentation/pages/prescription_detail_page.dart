@@ -24,180 +24,137 @@ class PrescriptionDetailPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Medication Header
+            // Clinic-style prescription card
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.06),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Clinic header
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Icon(Icons.medication, color: Theme.of(context).colorScheme.primary, size: 32),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              prescription.medicationName,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              prescription.dosage,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
+                            Text('Nuveta Clinic', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text('123 Health Ave • City, Country', style: Theme.of(context).textTheme.bodySmall),
+                            Text('Tel: (555) 123-4567', style: Theme.of(context).textTheme.bodySmall),
                           ],
                         ),
+                      ),
+                      // Rx symbol
+                      Text('Rx', style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+
+                  const Divider(height: 20),
+
+                  // Patient & prescription header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Patient:', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text('Patient Name', style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('Date:', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text('${prescription.prescribedDate.day}/${prescription.prescribedDate.month}/${prescription.prescribedDate.year}', style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Medication block (styled like a prescription)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(prescription.medicationName, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        Text('${prescription.dosage} — ${prescription.frequency}', style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(height: 8),
+                        if (prescription.instructions.isNotEmpty) ...[
+                          Text('Instructions:', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text(prescription.instructions, style: Theme.of(context).textTheme.bodySmall),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Footer with doctor and signature
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Prescribed by', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                            Text(prescription.doctorName, style: Theme.of(context).textTheme.bodyMedium),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(width: 140, height: 1, color: Colors.grey.shade400),
+                          const SizedBox(height: 4),
+                          Text('Signature', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Actions
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {},
+                          child: const Text('Request Refill'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          await exportPrescriptionPdf(context, prescription);
+                        },
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: const Text('Download'),
                       ),
                     ],
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Information Grid
-            GridView.count(
-              crossAxisCount: isMobile ? 2 : 3,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.5,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              children: [
-                _InfoCard(
-                  title: 'Frequency',
-                  value: prescription.frequency,
-                  icon: Icons.schedule,
-                ),
-                _InfoCard(
-                  title: 'Quantity',
-                  value: '${prescription.quantity} units',
-                  icon: Icons.inventory,
-                ),
-                _InfoCard(
-                  title: 'Refills Left',
-                  value: '${prescription.refillsLeft}',
-                  icon: Icons.refresh,
-                ),
-                _InfoCard(
-                  title: 'Prescribed Date',
-                  value: '${prescription.prescribedDate.day}/${prescription.prescribedDate.month}/${prescription.prescribedDate.year}',
-                  icon: Icons.calendar_today,
-                ),
-                _InfoCard(
-                  title: 'Expiry Date',
-                  value: '${prescription.expiryDate.day}/${prescription.expiryDate.month}/${prescription.expiryDate.year}',
-                  icon: Icons.warning,
-                ),
-                _InfoCard(
-                  title: 'Doctor',
-                  value: prescription.doctorName.split(' ')[0],
-                  icon: Icons.person_outline,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Purpose Section
-            Text(
-              'Purpose',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(prescription.purpose),
-            ),
-            const SizedBox(height: 24),
-
-            // Instructions Section
-            Text(
-              'Instructions',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                border: Border.all(color: Colors.orange[200]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(prescription.instructions),
-            ),
-            const SizedBox(height: 24),
-
-            // Refill Button
-            if (prescription.refillsLeft > 0)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Request Refill'),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Refill request submitted successfully'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              )
-            else
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.phone),
-                  label: const Text('Contact Doctor'),
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: Colors.grey,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Download PDF'),
-                onPressed: () async {
-                  await exportPrescriptionPdf(context, prescription);
-                },
               ),
             ),
           ],

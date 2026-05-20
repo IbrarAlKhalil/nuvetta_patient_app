@@ -23,6 +23,8 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
   DateTime? _selectedDate;
   String? _selectedTime;
   String _selectedServiceType = 'telehealth';
+  final TextEditingController _homeLocationController = TextEditingController();
+  final String _clinicLocation = 'Nuveta Clinic, 123 Health Ave';
 
   final List<Map<String, String>> _serviceTypes = [
     {'id': 'telehealth', 'label': 'Telehealth'},
@@ -73,6 +75,12 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
         orElse: () => _doctors.first,
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _homeLocationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -172,6 +180,9 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                     onSelected: (_) {
                       setState(() {
                         _selectedServiceType = type['id']!;
+                        if (_selectedServiceType != 'home_visit') {
+                          _homeLocationController.clear();
+                        }
                       });
                     },
                   );
@@ -179,6 +190,50 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
               ),
 
               const SizedBox(height: 24),
+
+              if (_selectedServiceType == 'home_visit') ...[
+                Text(
+                  'Home Visit Location',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _homeLocationController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your home address',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 24),
+              ] else if (_selectedServiceType == 'in_clinic') ...[
+                Text(
+                  'Clinic Location',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(_clinicLocation),
+                ),
+                const SizedBox(height: 24),
+              ] else ...[
+                const SizedBox(height: 24),
+              ],
 
               // ================= DATE =================
               Text(
@@ -277,7 +332,9 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                 child: ElevatedButton(
                   onPressed: (_selectedDoctor != null &&
                           _selectedDate != null &&
-                          _selectedTime != null)
+                          _selectedTime != null &&
+                          (_selectedServiceType != 'home_visit' ||
+                              _homeLocationController.text.trim().isNotEmpty))
                       ? () {
                           final selectedDate = _selectedDate!;
                           final selectedTime = DateFormat('hh:mm a')
@@ -290,24 +347,26 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                             selectedTime.minute,
                           );
 
+                          final location = _selectedServiceType == 'telehealth'
+                              ? 'Telehealth visit'
+                              : _selectedServiceType == 'home_visit'
+                                  ? _homeLocationController.text.trim()
+                                  : _clinicLocation;
+
                           final appointment = {
                             'id': DateTime.now().millisecondsSinceEpoch
                                 .toString(),
                             'doctorName': _selectedDoctor!.displayName,
                             'specialty': _selectedDoctor!.specialization,
                             'dateTime': appointmentDateTime,
-                            'status': 'scheduled',
+                            'status': 'pending',
                             'type': _selectedServiceType,
                             'notes': _selectedServiceType == 'telehealth'
                                 ? 'Telehealth video visit'
                                 : _selectedServiceType == 'home_visit'
                                     ? 'Home visit requested'
                                     : 'In-clinic appointment',
-                            'location': _selectedServiceType == 'telehealth'
-                                ? 'Telehealth visit'
-                                : _selectedServiceType == 'home_visit'
-                                    ? 'Home visit'
-                                    : 'Clinic visit',
+                            'location': location,
                           };
 
                           widget.onBooked?.call(appointment);

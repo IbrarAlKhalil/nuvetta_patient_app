@@ -2,44 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryColor = Color(0xFF216BE8);
-  static const Color secondaryColor = Color(0xFF00C2D7);
-  static const Color tertiaryColor = Color(0xFF1D4D8F);
+  static const Color primaryColor = Color(0xFF3B82F6);
+  static const Color secondaryColor = Color(0xFFA5B4FC);
+  static const Color tertiaryColor = Color(0xFF8B5CF6);
   static const Color surfaceColor = Color(0xFFFFFFFF);
-  static const Color backgroundColor = Color(0xFFF4F8FF);
-  static const Color mutedColor = Color(0xFF7A8AA5);
-  static const Color darkBackground = Color(0xFF081526);
-  static const Color darkSurface = Color(0xFF11203A);
+  static const Color backgroundColor = Color(0xFFF4F7FC);
+  static const Color mutedColor = Color(0xFF6B7280);
+  static const Color darkBackground = Color(0xFF0F172A);
+  static const Color darkSurface = Color(0xFF111827);
 
   static final textTheme =
       GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
-        headlineLarge: GoogleFonts.inter(
-          fontSize: 32,
+        displayLarge: GoogleFonts.inter(
+          fontSize: 36,
           fontWeight: FontWeight.w800,
+          letterSpacing: -0.6,
+        ),
+        headlineLarge: GoogleFonts.inter(
+          fontSize: 28,
+          fontWeight: FontWeight.w700,
         ),
         headlineSmall: GoogleFonts.inter(
-          fontSize: 24,
+          fontSize: 22,
           fontWeight: FontWeight.w700,
         ),
         titleLarge: GoogleFonts.inter(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+        titleMedium: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
-        bodyLarge: GoogleFonts.inter(fontSize: 16, height: 1.5),
-        bodyMedium: GoogleFonts.inter(fontSize: 14, height: 1.4),
-        bodySmall: GoogleFonts.inter(fontSize: 13, height: 1.3),
+        bodyLarge: GoogleFonts.inter(fontSize: 16, height: 1.6),
+        bodyMedium: GoogleFonts.inter(fontSize: 14, height: 1.5),
+        bodySmall: GoogleFonts.inter(fontSize: 12, height: 1.4),
       );
 
   static final lightScheme = ColorScheme.fromSeed(
     seedColor: primaryColor,
     brightness: Brightness.light,
     primary: primaryColor,
+    onPrimary: Colors.white,
     secondary: secondaryColor,
+    onSecondary: Colors.white,
     tertiary: tertiaryColor,
     surface: surfaceColor,
     background: backgroundColor,
-    onPrimary: Colors.white,
-    onSecondary: Colors.white,
+    onSurface: const Color(0xFF111827),
+    onBackground: const Color(0xFF111827),
   );
 
   static final darkScheme = ColorScheme.fromSeed(
