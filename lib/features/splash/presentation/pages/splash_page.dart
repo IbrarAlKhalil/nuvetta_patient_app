@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../core/storage/token_storage.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -23,13 +22,11 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   Future<void> _init() async {
     await Future.delayed(const Duration(seconds: 2));
 
-    final token = await TokenStorage.getToken();
+    final user = await ref.read(authProvider.future);
 
     if (!mounted) return;
 
-    if (token != null) {
-      // 🔥 restore auth state properly
-      await ref.read(authProvider.notifier).initAuth();
+    if (user != null) {
       context.go('/home');
     } else {
       context.go('/login');

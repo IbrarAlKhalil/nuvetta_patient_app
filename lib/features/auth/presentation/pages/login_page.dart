@@ -12,14 +12,14 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final emailController = TextEditingController();
+  final identifierController = TextEditingController();
   final passwordController = TextEditingController();
   final _passwordFocus = FocusNode();
   bool _obscure = true;
 
   @override
   void dispose() {
-    emailController.dispose();
+    identifierController.dispose();
     passwordController.dispose();
     _passwordFocus.dispose();
     super.dispose();
@@ -97,7 +97,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                           const SizedBox(height: 28),
                           TextFormField(
-                            controller: emailController,
+                            controller: identifierController,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             autofillHints: const [AutofillHints.email],
@@ -105,11 +105,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 _passwordFocus.requestFocus(),
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.email_outlined),
-                              labelText: 'Email',
+                              labelText: 'Email or Phone',
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Enter your email';
+                                return 'Enter your email or phone';
                               }
                               return null;
                             },
@@ -176,6 +176,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                           const SizedBox(height: 16),
                           TextButton(
+                            onPressed: () => context.go('/forgot-password'),
+                            child: const Text('Forgot password?'),
+                          ),
+                          const SizedBox(height: 4),
+                          TextButton(
                             onPressed: () => context.go('/register'),
                             child: const Text(
                               "Don't have an account? Register",
@@ -198,7 +203,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (_formKey.currentState?.validate() ?? false) {
       ref
           .read(authProvider.notifier)
-          .login(emailController.text.trim(), passwordController.text);
+          .login(identifierController.text.trim(), passwordController.text);
     }
   }
 }

@@ -14,8 +14,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController nameController;
   late final TextEditingController emailController;
+  late final TextEditingController phoneController;
   late final TextEditingController passwordController;
   late final FocusNode _emailFocus;
+  late final FocusNode _phoneFocus;
   late final FocusNode _passwordFocus;
   bool _obscure = true;
 
@@ -24,8 +26,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     super.initState();
     nameController = TextEditingController();
     emailController = TextEditingController();
+    phoneController = TextEditingController();
     passwordController = TextEditingController();
     _emailFocus = FocusNode();
+    _phoneFocus = FocusNode();
     _passwordFocus = FocusNode();
   }
 
@@ -33,8 +37,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   void dispose() {
     nameController.dispose();
     emailController.dispose();
+    phoneController.dispose();
     passwordController.dispose();
     _emailFocus.dispose();
+    _phoneFocus.dispose();
     _passwordFocus.dispose();
     super.dispose();
   }
@@ -133,8 +139,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             autofillHints: const [AutofillHints.email],
-                            onFieldSubmitted: (_) =>
-                                _passwordFocus.requestFocus(),
+                            onFieldSubmitted: (_) => _phoneFocus.requestFocus(),
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.email_outlined),
                               labelText: 'Email',
@@ -142,6 +147,26 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Enter your email';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: phoneController,
+                            focusNode: _phoneFocus,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.telephoneNumber],
+                            onFieldSubmitted: (_) =>
+                                _passwordFocus.requestFocus(),
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.phone_outlined),
+                              labelText: 'Phone',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Enter your phone number';
                               }
                               return null;
                             },
@@ -224,15 +249,26 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     );
   }
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
-      ref
-          .read(authProvider.notifier)
-          .register(
-            nameController.text.trim(),
-            emailController.text.trim(),
-            passwordController.text,
-          );
+      try {
+        final token = await ref
+            .read(authProvider.notifier)
+            .register(
+              nameController.text.trim(),
+              emailController.text.trim(),
+              phoneController.text.trim(),
+              passwordController.text,
+            );
+
+        if (token.isNotEmpty) {
+          context.go('/verify-otp');
+        }
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration failed: $error')),
+        );
+      }
     }
   }
 }

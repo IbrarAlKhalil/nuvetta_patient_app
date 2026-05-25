@@ -6,8 +6,11 @@ import 'package:nuveta_patient_app/features/home/presentation/home_page.dart';
 import 'package:nuveta_patient_app/features/profile/presentation/profile_page.dart';
 
 import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
+import '../../features/auth/presentation/pages/reset_password_page.dart';
+import '../../features/auth/presentation/pages/verify_otp_page.dart';
 import '../../features/appointments/presentation/pages/appointments_page.dart';
 import '../../features/prescriptions/presentation/pages/prescriptions_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
@@ -28,7 +31,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isSplash = location == '/';
       final isLogin = location == '/login';
       final isRegister = location == '/register';
-      final isAuthPage = isLogin || isRegister;
+      final isForgot = location == '/forgot-password';
+      final isReset = location == '/reset-password';
+      final isVerifyOtp = location == '/verify-otp';
+      final isAuthPage = isLogin || isRegister || isForgot || isReset || isVerifyOtp;
 
       if (isSplash) return null;
       if (!isLoggedIn && !isAuthPage) return '/login';
@@ -42,6 +48,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/verify-otp',
+        builder: (context, state) => const VerifyOtpPage(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => const ResetPasswordPage(),
       ),
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../config/env.dart';
+import '../storage/token_storage.dart';
 
 class DioClient {
   static final Dio dio = _createDio();
@@ -15,10 +16,26 @@ class DioClient {
       ),
     );
 
-    // Add interceptor for logging
-    dio.interceptors.add(LoggingInterceptor());
+    dio.interceptors.addAll([
+      AuthInterceptor(),
+      LoggingInterceptor(),
+    ]);
 
     return dio;
+  }
+}
+
+class AuthInterceptor extends Interceptor {
+  @override
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    final token = await TokenStorage.getAccessToken();
+    if (token != null && token.isNotEmpty) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    super.onRequest(options, handler);
   }
 }
 
