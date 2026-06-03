@@ -10,6 +10,7 @@ import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
+import '../../features/auth/presentation/pages/totp_verify_page.dart';
 import '../../features/auth/presentation/pages/verify_otp_page.dart';
 import '../../features/appointments/presentation/pages/appointments_page.dart';
 import '../../features/prescriptions/presentation/pages/prescriptions_page.dart';
@@ -52,6 +53,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/verify-otp',
         builder: (context, state) => const VerifyOtpPage(),
+      ),
+      GoRoute(
+        path: '/totp-verify',
+        builder: (context, state) => const TotpVerifyPage(),
       ),
       GoRoute(
         path: '/forgot-password',

@@ -58,6 +58,7 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
     final pendingCountryCode =
         authNotifier.loginCountryCode ?? authNotifier.registrationCountryCode;
     final isLoginFlow = authNotifier.loginCountryCode != null && authNotifier.loginPhone != null;
+    final hasResendSession = authNotifier.loginSessionId != null || authNotifier.registrationId != null;
 
     ref.listen(authProvider, (previous, next) {
       next.whenOrNull(
@@ -193,18 +194,27 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
                         const SizedBox(height: 20),
                         // Resend OTP Section
                         Center(
-                          child: _canResend
-                              ? TextButton(
-                                  onPressed: _resendOtp,
-                                  child: const Text('Resend OTP'),
-                                )
+                          child: hasResendSession
+                              ? _canResend
+                                  ? TextButton(
+                                      onPressed: _resendOtp,
+                                      child: const Text('Resend OTP'),
+                                    )
+                                  : Text(
+                                      'Resend in $_secondsRemaining seconds',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: Colors.grey),
+                                    )
                               : Text(
-                                  'Resend in $_secondsRemaining seconds',
+                                  'Cannot resend OTP: no active session',
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.copyWith(color: Colors.grey),
+                                      ?.copyWith(color: Colors.red),
                                 ),
                         ),
                         const SizedBox(height: 16),

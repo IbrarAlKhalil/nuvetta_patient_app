@@ -66,18 +66,18 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
     final dynamic data;
     if (attachment != null) {
-      final filePart = attachment.bytes != null
+      final MultipartFile filePart = attachment.bytes != null
           ? MultipartFile.fromBytes(
               attachment.bytes!,
               filename: attachment.name,
             )
-          : MultipartFile.fromFile(
+          : await MultipartFile.fromFile(
               attachment.path!,
               filename: attachment.name,
             );
       data = FormData.fromMap({
         ...payload,
-        'attachment': filePart,
+        'file': filePart,
       });
     } else {
       data = payload;

@@ -44,6 +44,17 @@ class ProfileModel {
     return fullName.isEmpty ? 'Patient' : fullName;
   }
 
+  String get formattedPhone {
+    final rawPhone = phone.trim();
+    final rawCountry = countryCode.trim();
+    if (rawPhone.isEmpty) return rawCountry;
+    if (rawPhone.startsWith(rawCountry)) return rawPhone;
+    if (rawCountry.startsWith('+') && rawPhone.startsWith(rawCountry.substring(1))) {
+      return '+$rawPhone';
+    }
+    return '$rawCountry$rawPhone';
+  }
+
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     final name = (json['name'] ?? '').toString().trim();
     final parts = name.split(' ');

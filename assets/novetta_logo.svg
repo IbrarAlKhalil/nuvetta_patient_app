@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" role="img" aria-labelledby="title">
+  <title>Novetta Brand Logo</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B3C5D"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+  <rect width="360" height="120" rx="20" fill="url(#bg)"/>
+  <circle cx="60" cy="60" r="34" fill="#3A7CA5"/>
+  <path d="M44 40 L76 40 L80 72 L68 72 L68 50 L52 82 L44 82 Z" fill="#FFFFFF"/>
+  <text x="110" y="74" font-family="Inter, Arial, sans-serif" font-size="42" fill="#FFFFFF" font-weight="700">Nuveta</text>
+</svg>

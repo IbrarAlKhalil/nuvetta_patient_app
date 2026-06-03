@@ -69,17 +69,17 @@ class AuthNotifier extends AsyncNotifier<UserEntity?> {
 
       if (result.accessToken != null) {
         await TokenStorage.saveAccessToken(result.accessToken!);
-        var user = result.user;
-        if (user == null) {
-          final profile = await ref.read(profileRepositoryProvider).getProfile();
-          user = UserModel(
-            id: profile.id,
-            email: profile.email,
-            name: profile.fullName,
-            phone: '${profile.countryCode}${profile.phone}',
-            role: 'PATIENT',
-          );
-        }
+            var user = result.user;
+            if (user == null) {
+              final profile = await ref.read(profileRepositoryProvider).getProfile();
+              user = UserModel(
+                id: profile.id,
+                email: profile.email,
+                name: profile.fullName,
+                phone: '${profile.countryCode}${profile.phone}',
+                role: 'PATIENT',
+              );
+            }
         state = AsyncData(user);
         return false;
       }
@@ -116,17 +116,7 @@ class AuthNotifier extends AsyncNotifier<UserEntity?> {
       // Save token and user
       await TokenStorage.saveAccessToken(result.accessToken);
 
-      var user = result.user;
-      if (user == null) {
-        final profile = await ref.read(profileRepositoryProvider).getProfile();
-        user = UserModel(
-          id: profile.id,
-          email: profile.email,
-          name: profile.fullName,
-          phone: '${profile.countryCode}${profile.phone}',
-          role: 'PATIENT',
-        );
-      }
+          final user = result.user;
 
       // Clear login session
       loginSessionId = null;
@@ -180,17 +170,17 @@ class AuthNotifier extends AsyncNotifier<UserEntity?> {
 
       if (result.accessToken != null) {
         await TokenStorage.saveAccessToken(result.accessToken!);
-        var user = result.user;
-        if (user == null) {
-          final profile = await ref.read(profileRepositoryProvider).getProfile();
-          user = UserModel(
-            id: profile.id,
-            email: profile.email,
-            name: profile.fullName,
-            phone: '${profile.countryCode}${profile.phone}',
-            role: 'PATIENT',
-          );
-        }
+            var user = result.user;
+            if (user == null) {
+              final profile = await ref.read(profileRepositoryProvider).getProfile();
+              user = UserModel(
+                id: profile.id,
+                email: profile.email,
+                name: profile.fullName,
+                phone: '${profile.countryCode}${profile.phone}',
+                role: 'PATIENT',
+              );
+            }
         state = AsyncData(user);
         return result;
       }
@@ -232,17 +222,7 @@ class AuthNotifier extends AsyncNotifier<UserEntity?> {
       // Save token and user
       await TokenStorage.saveAccessToken(result.accessToken);
 
-      var user = result.user;
-      if (user == null) {
-        final profile = await ref.read(profileRepositoryProvider).getProfile();
-        user = UserModel(
-          id: profile.id,
-          email: profile.email,
-          name: profile.fullName,
-          phone: '${profile.countryCode}${profile.phone}',
-          role: 'PATIENT',
-        );
-      }
+          final user = result.user;
 
       // Clear registration session
       registrationId = null;

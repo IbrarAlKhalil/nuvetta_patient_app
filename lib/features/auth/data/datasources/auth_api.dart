@@ -28,7 +28,10 @@ class AuthApi {
           'password': password,
         },
       );
-      return _unwrap(response);
+      final data = _unwrap(response);
+      print('🔍 loginWithPassword response: $data');
+      print('🔍 requiresOtp: ${data['requiresOtp']}, sessionId: ${data['sessionId'] ?? data['registrationId'] ?? data['session_id']}');
+      return data;
     } on DioException catch (e) {
       print('❌ Login Error: ${e.type} - ${e.message}');
       print('URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');
@@ -85,7 +88,10 @@ class AuthApi {
         '/auth/register',
         data: data,
       );
-      return _unwrap(response);
+      final resp = _unwrap(response);
+      print('🔍 registerWithPassword response: $resp');
+      print('🔍 requiresOtp: ${resp['requiresOtp']}, sessionId: ${resp['sessionId'] ?? resp['registrationId'] ?? resp['session_id']}');
+      return resp;
     } on DioException catch (e) {
       print('❌ Register Error: ${e.type} - ${e.message}');
       print('📍 URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');

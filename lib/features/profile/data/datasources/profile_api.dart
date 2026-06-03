@@ -4,6 +4,23 @@ import '../../../../core/network/dio_client.dart';
 class ProfileApi {
   final Dio dio = DioClient.dio;
 
+  static void _logDioError(String label, DioException e) {
+    print('❌ $label: ${e.message}');
+    if (e.response != null) {
+      print('   Status: ${e.response?.statusCode}');
+      print('   Response: ${e.response?.data}');
+    }
+    print('   Request path: ${e.requestOptions.path}');
+
+    final requestData = e.requestOptions.data;
+    if (requestData is FormData) {
+      print('   Request FormData fields: ${requestData.fields.map((f) => '${f.key}=${f.value}').join(', ')}');
+      print('   Request FormData files: ${requestData.files.map((f) => '${f.key}=${f.value.filename}').join(', ')}');
+    } else {
+      print('   Request data: $requestData');
+    }
+  }
+
   static Map<String, dynamic> _unwrap(Response response) {
     final data = response.data;
     if (data is Map<String, dynamic>) {
@@ -28,7 +45,7 @@ class ProfileApi {
       final response = await dio.get('/profile');
       return _unwrap(response);
     } on DioException catch (e) {
-      print('❌ Get profile error: ${e.message}');
+      _logDioError('Get profile error', e);
       rethrow;
     }
   }
@@ -38,7 +55,7 @@ class ProfileApi {
       final response = await dio.patch('/profile', data: payload);
       return _unwrap(response);
     } on DioException catch (e) {
-      print('❌ Update profile error: ${e.message}');
+      _logDioError('Update profile error', e);
       rethrow;
     }
   }
@@ -48,7 +65,7 @@ class ProfileApi {
       final response = await dio.get('/profile/records');
       return _unwrapList(response);
     } on DioException catch (e) {
-      print('❌ Get records error: ${e.message}');
+      _logDioError('Get records error', e);
       rethrow;
     }
   }
@@ -58,7 +75,7 @@ class ProfileApi {
       final response = await dio.post('/profile/records', data: payload);
       return _unwrap(response);
     } on DioException catch (e) {
-      print('❌ Add record error: ${e.message}');
+      _logDioError('Add record error', e);
       rethrow;
     }
   }

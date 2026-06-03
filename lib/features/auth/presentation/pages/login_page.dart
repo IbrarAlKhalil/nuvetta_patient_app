@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nuveta_patient_app/core/security/totp_storage.dart';
 import 'package:nuveta_patient_app/features/auth/presentation/providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -75,6 +77,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          Center(
+                            child: SvgPicture.asset(
+                              'assets/novetta_logo.svg',
+                              height: 76,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
                           Text(
                             'Welcome Back',
                             style: Theme.of(context).textTheme.headlineSmall
@@ -249,7 +258,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (requiresOtp) {
         context.go('/verify-otp');
       } else {
-        context.go('/home');
+        final localSecret = await TotpStorage.getSecret();
+        if (localSecret != null) {
+          context.go('/totp-verify');
+        } else {
+          context.go('/home');
+        }
       }
     } catch (e) {
       if (context.mounted) {

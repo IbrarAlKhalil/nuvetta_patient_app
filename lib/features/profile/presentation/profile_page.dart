@@ -1,16 +1,41 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:nuveta_patient_app/features/profile/data/models/profile_model.dart';
 import 'package:nuveta_patient_app/features/profile/data/models/record_model.dart';
 import 'package:nuveta_patient_app/features/profile/presentation/providers/profile_provider.dart';
 import 'package:nuveta_patient_app/features/profile/widgets/profile_header.dart';
-import '../../../features/auth/presentation/providers/auth_provider.dart';
+import 'package:nuveta_patient_app/core/security/totp_storage.dart';
+import 'package:nuveta_patient_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:nuveta_patient_app/features/auth/presentation/widgets/totp_enroll_widget.dart';
 
-
-class ProfilePage extends ConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  bool _totpEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTotpEnabled();
+  }
+
+  Future<void> _loadTotpEnabled() async {
+    final enabled = await TotpStorage.hasSecret();
+    if (mounted) {
+      setState(() {
+        _totpEnabled = enabled;
+      });
+    }
+  }
 
   Future<void> _showEditProfileDialog(
     BuildContext context,
@@ -131,7 +156,7 @@ class ProfilePage extends ConsumerWidget {
                 } catch (error) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Update failed: $error')),
+                      SnackBar(content: Text(_friendlyErrorMessage(error))),
                     );
                   }
                 }
@@ -142,6 +167,96 @@ class ProfilePage extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Future<void> _showTotpEnrollDialog(BuildContext context, WidgetRef ref, ProfileModel profile) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enable Authenticator'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: TotpEnrollWidget(
+              issuer: 'Nuveta',
+              accountName: profile.email.isNotEmpty ? profile.email : '${profile.firstName} ${profile.lastName}',
+              onEnrolled: (secret) async {
+                await TotpStorage.saveSecret(secret);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Authenticator enabled successfully')),
+                  );
+                }
+                _loadTotpEnabled();
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _disableTotp() async {
+    await TotpStorage.clearSecret();
+    if (mounted) {
+      setState(() {
+        _totpEnabled = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Authenticator disabled')),
+      );
+    }
+  }
+
+  String _friendlyErrorMessage(Object error) {
+    if (error is DioException) {
+      final status = error.response?.statusCode;
+      if (status == 400) return 'Check your input and try again.';
+      if (status == 401) return 'Please log in again.';
+      if (status == 404) return 'Resource not found.';
+      return 'Something went wrong. Please try again.';
+    }
+    return 'Something went wrong. Please try again.';
+  }
+
+  Future<void> _openRecordAttachment(BuildContext context, RecordModel record) async {
+    final url = record.attachmentUrl;
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No attachment is available for this record.')),
+      );
+      return;
+    }
+
+    Uri? uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) {
+      if (url.contains('uploads/records/')) {
+        final path = url.substring(url.indexOf('uploads/records/'));
+        uri = Uri.parse('https://novetta-backend.onrender.com/$path');
+      } else {
+        uri = Uri.tryParse('https://novetta-backend.onrender.com/$url');
+      }
+    }
+
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to open attachment URL.')),
+      );
+      return;
+    }
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the attached file.')),
+      );
+    }
   }
 
   Future<void> _showAddRecordDialog(BuildContext context, WidgetRef ref) async {
@@ -257,6 +372,14 @@ class ProfilePage extends ConsumerWidget {
                 ElevatedButton(
                   onPressed: () async {
                     if (!(formKey.currentState?.validate() ?? false)) return;
+                    if (selectedFile == null) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please attach a file before adding a record')),
+                        );
+                      }
+                      return;
+                    }
                     try {
                       await ref.read(profileRepositoryProvider).addRecord(
                             type: typeController.text.trim(),
@@ -275,7 +398,7 @@ class ProfilePage extends ConsumerWidget {
                     } catch (error) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to add record: $error')),
+                          SnackBar(content: Text(_friendlyErrorMessage(error))),
                         );
                       }
                     }
@@ -291,41 +414,51 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _buildRecordCard(BuildContext context, RecordModel record) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              record.title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              record.description,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(record.type, style: const TextStyle(fontWeight: FontWeight.bold)),
+    return InkWell(
+      onTap: () => _openRecordAttachment(context, record),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                record.title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              if (record.attachmentName != null) ...[
+                const SizedBox(height: 4),
                 Text(
-                  '${record.date.day}/${record.date.month}/${record.date.year}',
-                  style: const TextStyle(color: Colors.grey),
+                  record.attachmentName!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.primary),
                 ),
               ],
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                record.description,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(record.type, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    '${record.date.day}/${record.date.month}/${record.date.year}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
     final recordsAsync = ref.watch(profileRecordsProvider);
 
@@ -344,7 +477,7 @@ class ProfilePage extends ConsumerWidget {
         },
         child: profileAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error loading profile: $e')),
+          error: (e, _) => Center(child: Text('Unable to load profile.')),
           data: (profile) {
             return SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -367,11 +500,43 @@ class ProfilePage extends ConsumerWidget {
                           const SizedBox(height: 12),
                           Text('Email: ${profile.email.isNotEmpty ? profile.email : 'Not available'}'),
                           const SizedBox(height: 6),
-                          Text('Phone: ${profile.countryCode}${profile.phone}'),
+                          Text('Phone: ${profile.formattedPhone}'),
                           const SizedBox(height: 6),
                           if (profile.address.isNotEmpty) Text('Address: ${profile.address}'),
                           const SizedBox(height: 6),
                           if (profile.insuranceProvider.isNotEmpty) Text('Insurance: ${profile.insuranceProvider}'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Authenticator App', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 12),
+                          Text(
+                            _totpEnabled
+                                ? 'Authenticator app is enabled. Use your authenticator app to generate codes for login verification.'
+                                : 'Enable an authenticator app to get OTP codes without relying on SMS.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (_totpEnabled) {
+                                _disableTotp();
+                              } else {
+                                _showTotpEnrollDialog(context, ref, profile);
+                              }
+                            },
+                            child: Text(_totpEnabled ? 'Disable Authenticator' : 'Enable Authenticator'),
+                          ),
                         ],
                       ),
                     ),
@@ -397,7 +562,7 @@ class ProfilePage extends ConsumerWidget {
                   const SizedBox(height: 20),
                   recordsAsync.when(
                     loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text('Error loading records: $e')),
+                    error: (e, _) => Center(child: Text('Unable to load records.')),
                     data: (records) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,

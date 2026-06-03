@@ -129,7 +129,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final accessToken = result['access_token'] as String? ?? result['token'] as String?;
     final userData = result['user'] as Map<String, dynamic>?;
     final requiresOtp = result['requiresOtp'] as bool? ?? false;
-    final sessionId = result['sessionId'] as String? ?? result['registrationId'] as String?;
+    final sessionId = result['sessionId'] as String? ?? result['registrationId'] as String? ?? result['session_id'] as String?;
     final message = result['message'] as String?;
 
     if (accessToken != null) {
@@ -151,7 +151,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     }
 
-    if (requiresOtp || sessionId != null || message != null) {
+    if (requiresOtp && sessionId != null) {
       return RegisterWithPasswordResult(
         otpResult: RegisterOtpRequiredResult(
           countryCode: countryCode,
