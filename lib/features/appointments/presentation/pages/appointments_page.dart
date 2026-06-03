@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:nuveta_patient_app/core/mock/mock_data.dart';
 
-import '../pages/telehealth_session_page.dart';
 import '../widgets/appointments_list.dart';
 import '../widgets/book_appointment_sheet.dart';
 
@@ -48,15 +47,6 @@ class _AppointmentsPageState
   void _addAppointment(Map<String, dynamic> appointment) {
     setState(() {
       _appointments.insert(0, appointment);
-    });
-  }
-
-  void _updateAppointmentStatus(String appointmentId, String newStatus) {
-    setState(() {
-      final index = _appointments.indexWhere((a) => a['id'] == appointmentId);
-      if (index != -1) {
-        _appointments[index]['status'] = newStatus;
-      }
     });
   }
 

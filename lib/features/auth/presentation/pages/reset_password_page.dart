@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nuveta_patient_app/features/auth/presentation/providers/auth_provider.dart';
+import '../../presentation/providers/auth_provider.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   const ResetPasswordPage({super.key});
@@ -19,7 +19,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   @override
   void initState() {
     super.initState();
-    final pendingToken = ref.read(authProvider.notifier).forgotPasswordToken;
+    final pendingToken = ref.read(authProvider.notifier).resetToken;
     if (pendingToken != null && pendingToken.isNotEmpty) {
       tokenController.text = pendingToken;
     }
@@ -109,8 +109,8 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                             if (value == null || value.trim().isEmpty) {
                               return 'Enter your new password';
                             }
-                            if (value.length < 6) {
-                              return 'Use at least 6 characters';
+                            if (value.length < 8) {
+                              return 'Use at least 8 characters';
                             }
                             return null;
                           },
@@ -158,10 +158,12 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
             tokenController.text.trim(),
             passwordController.text,
           );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset successfully. Please log in.')),
-      );
-      context.go('/login');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset successfully. Please log in.')),
+        );
+        context.go('/login');
+      }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Reset failed: $error')),

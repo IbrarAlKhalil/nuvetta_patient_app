@@ -7,24 +7,24 @@ class AuthApi {
   static Map<String, dynamic> _unwrap(Response response) {
     final data = response.data;
     if (data is Map<String, dynamic>) {
-      final payload = data['data'];
-      if (payload is Map<String, dynamic>) {
-        return payload;
-      }
       return data;
     }
     return {};
   }
 
-  Future<Map<String, dynamic>> login(
-    String identifier,
+  /// Login with phone and password
+  /// Returns: { requiresOtp: true, sessionId: "...", phone: "..." }
+  Future<Map<String, dynamic>> loginWithPassword(
+    String countryCode,
+    String phone,
     String password,
   ) async {
     try {
       final response = await dio.post(
         '/auth/login',
         data: {
-          'identifier': identifier,
+          'countryCode': countryCode,
+          'phone': phone,
           'password': password,
         },
       );
@@ -36,102 +36,168 @@ class AuthApi {
     }
   }
 
-  Future<Map<String, dynamic>> register(
-    String name,
-    String email,
+  /// Verify OTP for login
+  /// Returns: { access_token: "...", refresh_token: "...", user: {...} }
+  Future<Map<String, dynamic>> verifyLoginOtp(
+    String countryCode,
     String phone,
-    String password,
-  ) async {
-    try {
-      final response = await dio.post(
-        '/auth/register',
-        data: {
-          'name': name,
-          'email': email,
-          'phone': phone,
-          'password': password,
-        },
-      );
-      return _unwrap(response);
-    } on DioException catch (e) {
-      print('❌ Register Error: ${e.type} - ${e.message}');
-      print('URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');
-      rethrow;
-    }
-  }
-
-  Future<Map<String, dynamic>> verifyOtp(
-    String token,
     String code,
   ) async {
     try {
       final response = await dio.post(
         '/auth/verify-otp',
         data: {
-          'token': token,
+          'countryCode': countryCode,
+          'phone': phone,
           'code': code,
         },
       );
       return _unwrap(response);
     } on DioException catch (e) {
-      print('❌ Verify OTP Error: ${e.type} - ${e.message}');
-      print('URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');
+      print('❌ Verify Login OTP error: ${e.type} - ${e.message}');
       rethrow;
     }
   }
 
-  Future<Map<String, dynamic>> forgotPassword(String identifier) async {
+  /// Register with user details
+  /// Returns: { requiresOtp: true, sessionId: "...", phone: "..." }
+  Future<Map<String, dynamic>> registerWithPassword({
+    required String fullName,
+    required String countryCode,
+    required String phone,
+    required String password,
+    required String role,
+    String? email,
+  }) async {
+    try {
+      final data = {
+        'fullName': fullName,
+        'countryCode': countryCode,
+        'phone': phone,
+        'password': password,
+        'role': role,
+      };
+      if (email != null && email.isNotEmpty) {
+        data['email'] = email;
+      }
+
+      final response = await dio.post(
+        '/auth/register',
+        data: data,
+      );
+      return _unwrap(response);
+    } on DioException catch (e) {
+      print('❌ Register Error: ${e.type} - ${e.message}');
+      print('📍 URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');
+      print('⏱️  Base URL: ${e.requestOptions.baseUrl}');
+      print('🔴 Response status: ${e.response?.statusCode}');
+      print('🔴 Response data: ${e.response?.data}');
+      rethrow;
+    }
+  }
+
+  /// Verify OTP for registration
+  /// Returns: { access_token: "...", refresh_token: "...", user: {...}, userId: ... }
+  Future<Map<String, dynamic>> verifyRegisterOtp(
+    String countryCode,
+    String phone,
+    String code,
+  ) async {
+    try {
+      final response = await dio.post(
+        '/auth/verify-otp',
+        data: {
+          'countryCode': countryCode,
+          'phone': phone,
+          'code': code,
+        },
+      );
+      return _unwrap(response);
+    } on DioException catch (e) {
+      print('❌ Verify Register OTP error: ${e.type} - ${e.message}');
+      rethrow;
+    }
+  }
+
+  /// Resend OTP
+  /// Returns: { success: true }
+  Future<Map<String, dynamic>> resendOtp(
+    String sessionId,
+  ) async {
+    try {
+      final response = await dio.post(
+        '/auth/resend-otp',
+        data: {
+          'sessionId': sessionId,
+        },
+      );
+      return _unwrap(response);
+    } on DioException catch (e) {
+      print('❌ Resend OTP error: ${e.type} - ${e.message}');
+      rethrow;
+    }
+  }
+
+  /// Forgot password - start recovery flow
+  Future<Map<String, dynamic>> forgotPassword(
+    String countryCode,
+    String phone,
+  ) async {
     try {
       final response = await dio.post(
         '/auth/forgot-password',
-        data: {'identifier': identifier},
+        data: {
+          'countryCode': countryCode,
+          'phone': phone,
+        },
       );
       return _unwrap(response);
     } on DioException catch (e) {
-      print('❌ Forgot Password Error: ${e.type} - ${e.message}');
-      print('URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');
+      print('❌ Forgot password error: ${e.type} - ${e.message}');
       rethrow;
     }
   }
 
-  Future<void> resetPassword(String token, String newPassword) async {
+  /// Verify OTP for password reset
+  Future<Map<String, dynamic>> verifyOtp(
+    String countryCode,
+    String phone,
+    String otp,
+  ) async {
     try {
-      await dio.post(
+      final response = await dio.post(
+        '/auth/verify-otp',
+        data: {
+          'countryCode': countryCode,
+          'phone': phone,
+          'code': otp,
+        },
+      );
+      return _unwrap(response);
+    } on DioException catch (e) {
+      print('❌ Verify OTP error: ${e.type} - ${e.message}');
+      rethrow;
+    }
+  }
+
+  /// Reset password
+  Future<Map<String, dynamic>> resetPassword(
+    String token,
+    String password,
+  ) async {
+    try {
+      final response = await dio.post(
         '/auth/reset-password',
         data: {
           'token': token,
-          'newPassword': newPassword,
+          'password': password,
         },
       );
-    } on DioException catch (e) {
-      print('❌ Reset Password Error: ${e.type} - ${e.message}');
-      print('URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');
-      rethrow;
-    }
-  }
-
-  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
-    try {
-      final response = await dio.post(
-        '/auth/refresh',
-        data: {'refreshToken': refreshToken},
-      );
       return _unwrap(response);
     } on DioException catch (e) {
-      print('❌ Refresh Token Error: ${e.type} - ${e.message}');
-      print('URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');
-      rethrow;
-    }
-  }
-
-  Future<Map<String, dynamic>> getProfile() async {
-    try {
-      final response = await dio.get('/auth/me');
-      return _unwrap(response);
-    } on DioException catch (e) {
-      print('❌ Get Profile Error: ${e.type} - ${e.message}');
-      print('URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}');
+      print('❌ Reset password error: ${e.type} - ${e.message}');
       rethrow;
     }
   }
 }
+

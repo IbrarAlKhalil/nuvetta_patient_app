@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nuveta_patient_app/features/auth/presentation/providers/auth_provider.dart';
+import '../../presentation/providers/auth_provider.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -12,11 +12,13 @@ class ForgotPasswordPage extends ConsumerStatefulWidget {
 
 class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final identifierController = TextEditingController();
+  final countryCodeController = TextEditingController(text: '+1');
+  final phoneController = TextEditingController();
 
   @override
   void dispose() {
-    identifierController.dispose();
+    countryCodeController.dispose();
+    phoneController.dispose();
     super.dispose();
   }
 
@@ -64,19 +66,41 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Enter your email or phone and we will send a reset token.',
+                          'Enter your phone number and country code to receive a reset OTP.',
                         ),
                         const SizedBox(height: 20),
                         TextFormField(
-                          controller: identifierController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: countryCodeController,
+                          keyboardType: TextInputType.phone,
                           decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.person_outline),
-                            labelText: 'Email or Phone',
+                            prefixIcon: Icon(Icons.public),
+                            labelText: 'Country Code',
+                            hintText: '+1',
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Enter email or phone';
+                              return 'Enter your country code';
+                            }
+                            if (!RegExp(r'^\+\d{1,4}\$').hasMatch(value.trim())) {
+                              return 'Use format +1';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: phoneController,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.phone_outlined),
+                            labelText: 'Phone Number',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Enter your phone number';
+                            }
+                            if (!RegExp(r'^[0-9]{6,15}\$').hasMatch(value.trim())) {
+                              return 'Enter a valid phone number';
                             }
                             return null;
                           },
@@ -96,7 +120,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                 ? const CircularProgressIndicator(
                                     color: Colors.white,
                                   )
-                                : const Text('Send Reset Token'),
+                                : const Text('Send Reset OTP'),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -120,10 +144,13 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     try {
-      await ref
-          .read(authProvider.notifier)
-          .forgotPassword(identifierController.text.trim());
-      context.go('/reset-password');
+      await ref.read(authProvider.notifier).forgotPassword(
+            countryCodeController.text.trim(),
+            phoneController.text.trim(),
+          );
+      if (context.mounted) {
+        context.go('/verify-otp');
+      }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Request failed: $error')),

@@ -12,14 +12,16 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final identifierController = TextEditingController();
+  final countryCodeController = TextEditingController(text: '+1');
+  final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   final _passwordFocus = FocusNode();
   bool _obscure = true;
 
   @override
   void dispose() {
-    identifierController.dispose();
+    countryCodeController.dispose();
+    phoneController.dispose();
     passwordController.dispose();
     _passwordFocus.dispose();
     super.dispose();
@@ -32,15 +34,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     ref.listen(authProvider, (previous, next) {
       next.whenOrNull(
-        data: (user) {
-          if (user != null) {
-            context.go('/home');
-          }
-        },
-        error: (e, _) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+        error: (error, stackTrace) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login failed: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
         },
       );
     });
@@ -85,7 +85,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Sign in to continue',
+                            'Sign in to continue with your phone and password',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: Theme.of(context)
@@ -96,23 +96,56 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                           ),
                           const SizedBox(height: 28),
-                          TextFormField(
-                            controller: identifierController,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.email],
-                            onFieldSubmitted: (_) =>
-                                _passwordFocus.requestFocus(),
-                            decoration: const InputDecoration(
-                              prefixIcon: Icon(Icons.email_outlined),
-                              labelText: 'Email or Phone',
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Enter your email or phone';
-                              }
-                              return null;
-                            },
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: TextFormField(
+                                  controller: countryCodeController,
+                                  keyboardType: TextInputType.phone,
+                                  textInputAction: TextInputAction.next,
+                                  decoration: const InputDecoration(
+                                    prefixIcon: Icon(Icons.public),
+                                    labelText: 'Code',
+                                    hintText: '+1',
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Required';
+                                    }
+                                    if (!RegExp(r'^\+\d{1,4}$').hasMatch(value.trim())) {
+                                      return 'Use +1';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 5,
+                                child: TextFormField(
+                                  controller: phoneController,
+                                  keyboardType: TextInputType.phone,
+                                  textInputAction: TextInputAction.next,
+                                  autofillHints: const [AutofillHints.telephoneNumber],
+                                  onFieldSubmitted: (_) =>
+                                      _passwordFocus.requestFocus(),
+                                  decoration: const InputDecoration(
+                                    prefixIcon: Icon(Icons.phone_outlined),
+                                    labelText: 'Phone Number',
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Enter your phone number';
+                                    }
+                                    if (!RegExp(r'^[0-9]{6,15}$').hasMatch(value.trim())) {
+                                      return 'Enter a valid phone';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -146,6 +179,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               if (value == null || value.isEmpty) {
                                 return 'Enter your password';
                               }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
                               return null;
                             },
                           ),
@@ -166,7 +202,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                       color: Colors.white,
                                     )
                                   : const Text(
-                                      'Sign In',
+                                      'Continue',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
@@ -199,11 +235,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  void _submit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      ref
-          .read(authProvider.notifier)
-          .login(identifierController.text.trim(), passwordController.text);
+  void _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    try {
+      final requiresOtp = await ref.read(authProvider.notifier).loginWithPassword(
+            countryCodeController.text.trim(),
+            phoneController.text.trim(),
+            passwordController.text,
+          );
+
+      if (!mounted) return;
+      if (requiresOtp) {
+        context.go('/verify-otp');
+      } else {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

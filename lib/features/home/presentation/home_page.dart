@@ -8,8 +8,7 @@ import 'package:nuveta_patient_app/features/appointments/presentation/pages/appo
 import 'package:nuveta_patient_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:nuveta_patient_app/features/doctors/models/doctor_model.dart';
 import 'package:nuveta_patient_app/features/doctors/presentation/providers/doctors_provider.dart';
-import 'package:nuveta_patient_app/features/home/presentation/home_widgets.dart';
-import 'package:nuveta_patient_app/features/home/presentation/widgets/action_card.dart';
+
 import 'package:nuveta_patient_app/features/prescriptions/data/models/prescription_model.dart';
 import 'package:nuveta_patient_app/features/prescriptions/presentation/pages/prescription_detail_page.dart';
 
@@ -46,7 +45,7 @@ class HomePage extends ConsumerWidget {
         'dateTime': record['dateTime'] as DateTime,
         'note': record['notes'] as String,
         'location': record['location'] as String,
-        'prescription': prescriptions[index % prescriptions.length] as PrescriptionModel,
+        'prescription': prescriptions[index % prescriptions.length],
       };
     }).toList();
 
