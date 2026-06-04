@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nuveta_patient_app/core/security/totp_storage.dart';
+import 'package:nuveta_patient_app/core/utils/validators.dart';
 import 'package:nuveta_patient_app/features/auth/presentation/providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -14,16 +15,14 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final countryCodeController = TextEditingController(text: '+1');
-  final phoneController = TextEditingController();
+  final combinedPhoneController = TextEditingController();
   final passwordController = TextEditingController();
   final _passwordFocus = FocusNode();
   bool _obscure = true;
 
   @override
   void dispose() {
-    countryCodeController.dispose();
-    phoneController.dispose();
+    combinedPhoneController.dispose();
     passwordController.dispose();
     _passwordFocus.dispose();
     super.dispose();
@@ -105,56 +104,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                           ),
                           const SizedBox(height: 28),
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: countryCodeController,
-                                  keyboardType: TextInputType.phone,
-                                  textInputAction: TextInputAction.next,
-                                  decoration: const InputDecoration(
-                                    prefixIcon: Icon(Icons.public),
-                                    labelText: 'Code',
-                                    hintText: '+1',
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Required';
-                                    }
-                                    if (!RegExp(r'^\+\d{1,4}$').hasMatch(value.trim())) {
-                                      return 'Use +1';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 5,
-                                child: TextFormField(
-                                  controller: phoneController,
-                                  keyboardType: TextInputType.phone,
-                                  textInputAction: TextInputAction.next,
-                                  autofillHints: const [AutofillHints.telephoneNumber],
-                                  onFieldSubmitted: (_) =>
-                                      _passwordFocus.requestFocus(),
-                                  decoration: const InputDecoration(
-                                    prefixIcon: Icon(Icons.phone_outlined),
-                                    labelText: 'Phone Number',
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Enter your phone number';
-                                    }
-                                    if (!RegExp(r'^[0-9]{6,15}$').hasMatch(value.trim())) {
-                                      return 'Enter a valid phone';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
+                          TextFormField(
+                            controller: combinedPhoneController,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.telephoneNumber],
+                            onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.phone_outlined),
+                              labelText: 'Phone Number',
+                              hintText: '+1 555 123 4567',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Enter your phone number';
+                              }
+                              if (!Validators.isValidPhone(value.trim())) {
+                                return 'Enter a valid phone number, e.g. +1 5551234567';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -247,10 +216,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   void _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    final parsedPhone = Validators.parsePhoneNumber(combinedPhoneController.text.trim());
+    if (parsedPhone == null) return;
+
     try {
       final requiresOtp = await ref.read(authProvider.notifier).loginWithPassword(
-            countryCodeController.text.trim(),
-            phoneController.text.trim(),
+            parsedPhone['countryCode']!,
+            parsedPhone['phone']!,
             passwordController.text,
           );
 
@@ -276,4 +248,5 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     }
   }
+
 }

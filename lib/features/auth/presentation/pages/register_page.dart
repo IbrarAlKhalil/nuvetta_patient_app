@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nuveta_patient_app/core/utils/validators.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
@@ -14,8 +15,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController nameController;
   late final TextEditingController emailController;
-  late final TextEditingController countryCodeController;
-  late final TextEditingController phoneController;
+  late final TextEditingController combinedPhoneController;
   late final TextEditingController passwordController;
   late final FocusNode _emailFocus;
   late final FocusNode _phoneFocus;
@@ -27,8 +27,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     super.initState();
     nameController = TextEditingController();
     emailController = TextEditingController();
-    countryCodeController = TextEditingController(text: '+1');
-    phoneController = TextEditingController();
+    combinedPhoneController = TextEditingController();
     passwordController = TextEditingController();
     _emailFocus = FocusNode();
     _phoneFocus = FocusNode();
@@ -39,8 +38,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   void dispose() {
     nameController.dispose();
     emailController.dispose();
-    countryCodeController.dispose();
-    phoneController.dispose();
+    combinedPhoneController.dispose();
     passwordController.dispose();
     _emailFocus.dispose();
     _phoneFocus.dispose();
@@ -147,8 +145,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             ),
                             validator: (value) {
                               if (value != null && value.trim().isNotEmpty) {
-                                final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                                if (!emailRegex.hasMatch(value)) {
+                                if (!Validators.isValidEmail(value.trim())) {
                                   return 'Enter a valid email';
                                 }
                               }
@@ -156,57 +153,27 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             },
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: countryCodeController,
-                                  keyboardType: TextInputType.phone,
-                                  textInputAction: TextInputAction.next,
-                                  decoration: const InputDecoration(
-                                    prefixIcon: Icon(Icons.public),
-                                    labelText: 'Code',
-                                    hintText: '+1',
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Required';
-                                    }
-                                    if (!RegExp(r'^\+\d{1,4}$').hasMatch(value.trim())) {
-                                      return 'Use +1';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 5,
-                                child: TextFormField(
-                                  controller: phoneController,
-                                  focusNode: _phoneFocus,
-                                  keyboardType: TextInputType.phone,
-                                  textInputAction: TextInputAction.next,
-                                  autofillHints: const [AutofillHints.telephoneNumber],
-                                  onFieldSubmitted: (_) =>
-                                      _passwordFocus.requestFocus(),
-                                  decoration: const InputDecoration(
-                                    prefixIcon: Icon(Icons.phone_outlined),
-                                    labelText: 'Phone',
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Enter your phone number';
-                                    }
-                                    if (!RegExp(r'^[0-9]{6,15}$').hasMatch(value.trim())) {
-                                      return 'Enter a valid phone';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
+                          TextFormField(
+                            controller: combinedPhoneController,
+                            focusNode: _phoneFocus,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.telephoneNumber],
+                            onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.phone_outlined),
+                              labelText: 'Phone Number',
+                              hintText: '+1 555 123 4567',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Enter your phone number';
+                              }
+                              if (!Validators.isValidPhone(value.trim())) {
+                                return 'Enter a valid phone number, e.g. +1 5551234567';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -292,11 +259,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   void _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    final parsedPhone = Validators.parsePhoneNumber(combinedPhoneController.text.trim());
+    if (parsedPhone == null) return;
+
     try {
       final result = await ref.read(authProvider.notifier).registerWithPassword(
             fullName: nameController.text.trim(),
-            countryCode: countryCodeController.text.trim(),
-            phone: phoneController.text.trim(),
+            countryCode: parsedPhone['countryCode']!,
+            phone: parsedPhone['phone']!,
             password: passwordController.text,
             email: emailController.text.trim(),
           );
@@ -331,4 +301,5 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       }
     }
   }
+
 }
