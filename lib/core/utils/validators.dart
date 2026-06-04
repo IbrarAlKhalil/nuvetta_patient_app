@@ -50,7 +50,7 @@ class Validators {
         final national = digits.substring(length);
         if (_dialCodes.contains(dialCode) && national.length >= 4 && national.length <= 14) {
           return {
-            'countryCode': '+',
+            'countryCode': '+$dialCode',
             'phone': national,
           };
         }
